@@ -1,3 +1,5 @@
+import './reset.css'
+
 const app = document.getElementById('app')!;
 
 app.innerHTML = `

@@ -1,7 +1,7 @@
-import './reset.css'
+import './reset.css';
+import { Game } from "./core/game";
 
-const app = document.getElementById('app')!;
+const game = new Game();
+game.start();
 
-app.innerHTML = `
-  <h1>Hello World!</h1>
-`
+setTimeout(() => game.stop(), 500)

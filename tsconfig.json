@@ -17,6 +17,7 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "incremental": true,
+    "types": ["vitest/globals"],
   },
-  "include": ["src"]
+  "include": ["."]
 }

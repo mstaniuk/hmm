@@ -1,9 +1,11 @@
 import { Keyboard } from '../keyboard';
 import { Loop } from '../loop';
+import {TileMap} from "../../features/pathfind/astar/astar";
 
 export class Game {
   private keyboard = new Keyboard();
   private loop = new Loop();
+  private map = new TileMap();
 
   constructor() {
     this.initialize();

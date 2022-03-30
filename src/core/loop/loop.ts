@@ -1,13 +1,13 @@
 export class Loop {
-  private _actions: Array<(() => void) | null> = [];
-  private _isStopped = true;
+  private actions: Array<(() => void) | null> = [];
+  isRunning = false;
 
   constructor() {
     this.nextTick();
   }
 
   private nextTick() {
-    if (this.isStopped) {
+    if (!this.isRunning) {
       return;
     }
     requestAnimationFrame(() => {
@@ -17,8 +17,7 @@ export class Loop {
   }
 
   private onLoop() {
-    for (let i = 0; i < this._actions.length; i++) {
-      const action = this._actions[i];
+    for (const action of this.actions) {
       if (action) {
         action();
       }
@@ -32,33 +31,16 @@ export class Loop {
    * @return index of the added action
    */
   public addAction(action: () => void): number {
-    const length = this._actions.push(action);
+    const length = this.actions.push(action);
     return length - 1;
   }
 
-  /**
-   * removeAction
-   *
-   * @param index - Index of an action to be removed
-   */
-  public removeAction(index: number) {
-    this._actions[index] = null;
-  }
-
   public stop() {
-    this._isStopped = true;
+    this.isRunning = false;
   }
 
   public start() {
-    this._isStopped = false;
+    this.isRunning = true;
     this.nextTick();
-  }
-
-  get isRunning() {
-    return !this._isStopped;
-  }
-
-  get isStopped() {
-    return this._isStopped;
   }
 }

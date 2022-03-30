@@ -1,9 +1,11 @@
-import { AStar, AStarState, Tile, TileMap } from '../../features/pathfind/astar/astar';
-import { Keyboard } from '../keyboard';
+import { AStar, AStarState } from '../../features/pathfind/astar/astar';
+// import { Keyboard } from '../keyboard';
 import { Loop } from '../loop';
+import { Tile } from '../tile/tile';
+import { TileMap } from '../tilemap/tilemap';
 
 export class Game {
-  private keyboard = new Keyboard();
+  // private keyboard = new Keyboard();
   private loop = new Loop();
   private map = new TileMap();
   private startPoint: Tile;
@@ -15,6 +17,7 @@ export class Game {
     this.startPoint = this.map.pointAt(10, 10)!;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.endPoint = this.map.pointAt(40, 40)!;
+
     this.pathfinder = new AStar(this.map, this.startPoint, this.endPoint);
     const button = document.getElementById('nextTick') as HTMLButtonElement;
     const button2 = document.getElementById('toggleLoop') as HTMLButtonElement;
@@ -25,9 +28,9 @@ export class Game {
 
     button2.addEventListener('click', () => {
       if (this.loop.isRunning) {
-        this.loop.stop();
+        this.stop();
       } else {
-        this.loop.start();
+        this.start();
       }
     });
     this.render();
@@ -36,21 +39,24 @@ export class Game {
   }
 
   public step() {
-    this.pathfinder.nextStep();
+    for (let i = 0; i < 500; i++) {
+      this.pathfinder.nextStep();
+    }
+    if (this.pathfinder.state === AStarState.Success) {
+      this.stop();
+    }
     this.render();
   }
 
   public render() {
     let map = '';
     const path = this.pathfinder.path();
-    console.count('reruns');
-    console.log(this.pathfinder.state);
+
     this.map.tiles.forEach((tile, i) => {
       if (i % this.map.width === 0) {
         map += '\n';
       }
 
-      // map += ` : ${tile.x.toString().padStart(2, '0')},${tile.y.toString().padStart(2, '0')}`;
       if (this.pathfinder.state === AStarState.Success) {
         if (path.includes(tile)) {
           map += 'o';

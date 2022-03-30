@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 module.exports = {
   parser: '@typescript-eslint/parser',
   parserOptions: {
@@ -5,14 +6,9 @@ module.exports = {
     sourceType: 'module',
   },
   plugins: ['simple-import-sort', 'eslint-plugin-import'],
-  extends: [
-    'plugin:@typescript-eslint/recommended',
-    'prettier',
-    'plugin:prettier/recommended',
-  ],
+  extends: ['plugin:@typescript-eslint/recommended', 'prettier', 'plugin:prettier/recommended'],
   rules: {
     curly: 'error',
-    'max-params': ['error', 3],
     'sort-imports': 'off',
     'import/order': 'off',
     'import/no-duplicates': 'error',

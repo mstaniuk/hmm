@@ -1,8 +1,8 @@
 export class Keyboard {
-  private _isUp = false;
-  private _isDown = false;
-  private _isLeft = false;
-  private _isRight = false;
+  isUp = false;
+  isDown = false;
+  isLeft = false;
+  isRight = false;
 
   constructor() {
     this.setupListeners();
@@ -14,19 +14,19 @@ export class Keyboard {
       switch (event.key) {
         case 'ArrowUp':
         case 'w':
-          this._isUp = true;
+          this.isUp = true;
           break;
         case 'ArrowDown':
         case 's':
-          this._isDown = true;
+          this.isDown = true;
           break;
         case 'ArrowLeft':
         case 'a':
-          this._isLeft = true;
+          this.isLeft = true;
           break;
         case 'ArrowRight':
         case 'd':
-          this._isRight = true;
+          this.isRight = true;
           break;
       }
     });
@@ -34,34 +34,21 @@ export class Keyboard {
       switch (event.key) {
         case 'ArrowUp':
         case 'w':
-          this._isUp = false;
+          this.isUp = false;
           break;
         case 'ArrowDown':
         case 's':
-          this._isDown = false;
+          this.isDown = false;
           break;
         case 'ArrowLeft':
         case 'a':
-          this._isLeft = false;
+          this.isLeft = false;
           break;
         case 'ArrowRight':
         case 'd':
-          this._isRight = false;
+          this.isRight = false;
           break;
       }
     });
-  }
-
-  get isUp() {
-    return this._isUp;
-  }
-  get isDown() {
-    return this._isDown;
-  }
-  get isLeft() {
-    return this._isLeft;
-  }
-  get isRight() {
-    return this._isRight;
   }
 }

@@ -7,6 +7,9 @@ export class Loop {
   }
 
   private nextTick() {
+    if (this.isStopped) {
+      return;
+    }
     requestAnimationFrame(() => {
       this.onLoop();
       this.nextTick();
@@ -14,10 +17,6 @@ export class Loop {
   }
 
   private onLoop() {
-    if (this.isStopped) {
-      return;
-    }
-
     for (let i = 0; i < this._actions.length; i++) {
       const action = this._actions[i];
       if (action) {
@@ -52,6 +51,7 @@ export class Loop {
 
   public start() {
     this._isStopped = false;
+    this.nextTick();
   }
 
   get isRunning() {

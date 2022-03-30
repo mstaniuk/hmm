@@ -17,7 +17,7 @@ export class Point {
 }
 
 export class Tile extends Point {
-  private _walkable: boolean;
+  private readonly _walkable: boolean;
   constructor(x: number, y: number, walkable: boolean) {
     super(x, y);
 
@@ -25,27 +25,23 @@ export class Tile extends Point {
   }
 
   get walkable() {
-    return this._walkable
-  }
-
-  set walkable(isWalkable) {
-    this._walkable = isWalkable
+    return this._walkable;
   }
 }
 
 export class TileMap {
-  private _width: number;
-  private _height: number;
-  private _map: Tile[];
+  private readonly _width: number;
+  private readonly _height: number;
+  private readonly _tiles: Tile[];
 
   constructor(width: number, height: number) {
     this._width = width;
     this._height = height;
-    this._map = Array(width * height).fill(true).map((_, i) => new Tile(i % width, Math.floor(i/ width), true));
+    this._tiles = new Array(width * height).fill(1).map((_, i) => new Tile(i % width, Math.floor(i / width), Math.random() > 0.2));
   }
 
-  get map() {
-    return this._map;
+  get tiles() {
+    return this._tiles;
   }
 
   get width() {
@@ -56,37 +52,41 @@ export class TileMap {
     return this._height;
   }
 
+  pointAt(x:number, y: number): Tile | undefined {
+    if (this.containsXY(x, y)) {
+      return this.tiles[y * this.width + x];
+    }
+    return undefined;
+  }
+
   neighbours(tile: Tile): Tile[] {
-    // To calculate index in the array use formula
-    // y * map.width + x
     return [
-      this.map[(tile.y - 1) * this.width + (tile.x - 1) ],
-      this.map[(tile.y - 1) * this.width + (tile.x)     ],
-      this.map[(tile.y - 1) * this.width + (tile.x + 1) ],
-      this.map[(tile.y    ) * this.width + (tile.x - 1) ],
-      this.map[(tile.y    ) * this.width + (tile.x + 1) ],
-      this.map[(tile.y + 1) * this.width + (tile.x - 1) ],
-      this.map[(tile.y + 1) * this.width + (tile.x)     ],
-      this.map[(tile.y + 1) * this.width + (tile.x + 1) ],
-    ].filter(n => n);
+      this.pointAt(tile.x, tile.y - 1),
+      this.pointAt(tile.x - 1, tile.y),
+      this.pointAt(tile.x + 1, tile.y),
+      this.pointAt(tile.x, tile.y + 1),
+    ].filter((n): n is Tile => Boolean(n));
+  }
+
+  containsXY(x: number, y: number): boolean {
+    return !(x < 0 || x >= this.width || y < 0 || y >= this.height);
   }
 
   contains(tile: Tile): boolean {
-    return !( tile.x < 0 || tile.x >= this.width || tile.y < 0 || tile.y >= this.height);
+    return !(tile.x < 0 || tile.x >= this.width || tile.y < 0 || tile.y >= this.height);
   }
 
   distanceBetween(tile1: Tile, tile2: Tile): number {
-    return (Math.abs(tile1.x - tile2.x) + Math.abs(tile1.y - tile2.y))
+    return Math.abs(tile1.x - tile2.x) + Math.abs(tile1.y - tile2.y);
   }
 }
 
-
 export class AStarNode {
-  private _point: Tile;
-  private _parent: AStarNode | null;
-  private moveCost: number;
-  private heuristic: number;
-  private _cost: number;
+  private readonly _point: Tile;
+  private readonly _parent: AStarNode | null;
+  private readonly moveCost: number;
+  private readonly heuristic: number;
+  private readonly _cost: number;
 
   constructor(point: Tile);
   constructor(node: Tile, heuristic: number, parent: AStarNode);
@@ -94,9 +94,9 @@ export class AStarNode {
   constructor(point: Tile, heuristic?: number, parent?: AStarNode) {
     this._point = point;
 
-    if (parent && heuristic) {
+    if (parent && heuristic != null) {
       this._parent = parent;
-      this.moveCost = parent.moveCost + 10;
+      this.moveCost = parent.moveCost + 1;
       this.heuristic = heuristic;
       this._cost = this.moveCost + this.heuristic;
     } else {
@@ -120,24 +120,31 @@ export class AStarNode {
   }
 }
 
+export enum AStarState {
+  'start',
+  'fail',
+  'success',
+}
+
 export class AStar {
-  private start: AStarNode;
-  private end: AStarNode;
-  private openList: Array<AStarNode>; // TODO: A heap / Fibonacci Min Heap ?
+  private readonly start: AStarNode;
+  private readonly end: AStarNode;
+  private readonly openList: Array<AStarNode>; // TODO: A heap / Fibonacci Min Heap ?
   private closeList: Set<Tile>;
   private map: TileMap;
-  private started = false;
-  private finished = false;
-  private success = false;
-  private current: AStarNode | undefined;
+  public current: AStarNode | undefined;
+  public state: AStarState;
 
   constructor(map: TileMap, startPoint: Tile, endPoint: Tile) {
     this.map = map;
     this.start = new AStarNode(startPoint);
     this.end = new AStarNode(endPoint);
+    this.state = AStarState.start;
 
     this.openList = [this.start];
-    this.closeList  = new Set();
+    this.closeList = new Set();
+
+    this.preStart();
   }
 
   /**
@@ -149,17 +156,27 @@ export class AStar {
    * @private
    */
   private preStart() {
+    if (!this.start.point.walkable) {
+      this.state = AStarState.fail;
+      return this.state;
+    }
+
+    if (!this.end.point.walkable) {
+      this.state = AStarState.fail;
+      return this.state;
+    }
+
     if (this.start.point === this.end.point) {
-      this.finished = true;
-      return this.finished;
+      this.state = AStarState.fail;
+      return this.state;
     }
 
     if (!this.map.contains(this.end.point)) {
-      this.finished = true;
-      return this.finished;
+      this.state = AStarState.fail;
+      return this.state;
     }
 
-    return this.finished;
+    return this.state;
   }
 
   /**
@@ -169,24 +186,16 @@ export class AStar {
    * Some initialization is done before start as a step in searching
    */
   public nextStep() {
-
     // If search is finished do nothing
-    if (this.finished) {
-      return this.finished;
-    }
-
-    // If not started yet, do pre start initialization
-    if (!this.started) {
-      this.preStart();
-      this.started = true;
-      return this.finished;
+    if (this.state !== AStarState.start) {
+      return this.state;
     }
 
     // If nothing to check just finish
     // Path is out of reach
     if (this.openList.length <= 0) {
-      this.finished = true;
-      return this.finished;
+      this.state = AStarState.fail;
+      return this.state;
     }
 
     // Get most promising node - with the least cost associated with it
@@ -195,14 +204,12 @@ export class AStar {
     // If the current node points to the same point as end one, the search is over
     // Path is provided by traversing parent linked list
     if (this.current.point === this.end.point) {
-      this.success = true;
-      this.finished = true;
-      return this.finished;
+      this.state = AStarState.success;
+      return this.state;
     }
 
     // Set current point as checked
     this.closeList.add(this.current.point);
-
     // Get neighbouring nodes
     const neighbors = this.map.neighbours(this.current.point);
 
@@ -229,42 +236,35 @@ export class AStar {
 
       if (nodeInOpenListIndex > -1) {
         const nodeInOpenList = this.openList[nodeInOpenListIndex];
-
         // Check if node queued for evaluation had worse (bigger) cost associated with it
         // Meaning: Check if path to already found point is worse than the one that we are checking
         // Without this step the final path may be suboptimal
         if (nodeInOpenList.cost > node.cost) {
+
           // Replace existing node if is worse
           this.openList[nodeInOpenListIndex] = node;
-          continue;
         }
+
+        continue;
       }
 
       // If node has not been seen before add it to queue to be validated
       this.openList.push(node);
     }
 
-    return this.finished;
+    return this.state;
   }
 
-  path(): Array<Point> {
-    const path: Array<Point> = []
+  path(): Array<Tile> {
+    const path: Array<Tile> = [];
 
-    if (!this.finished) {
+    if (this.state !== AStarState.success) {
       return path;
     }
 
-    if (!this.current) {
-      return path;
-    }
+    let node = this.current as AStarNode;
 
-    if (!this.success) {
-      return path;
-    }
-
-    let node = this.current;
-
-    while(node.parent !== null) {
+    while (node.parent !== null) {
       path.push(node.point);
       node = node.parent;
     }

@@ -1,3 +1,5 @@
+import map from '../../../core/assets/map.txt?raw';
+
 export class Point {
   private readonly _x: number;
   private readonly _y: number;
@@ -34,10 +36,17 @@ export class TileMap {
   private readonly _height: number;
   private readonly _tiles: Tile[];
 
-  constructor(width: number, height: number) {
-    this._width = width;
-    this._height = height;
-    this._tiles = new Array(width * height).fill(1).map((_, i) => new Tile(i % width, Math.floor(i / width), Math.random() > 0.2));
+  constructor() {
+    const mapLines = map.split('\n');
+    mapLines.pop();
+    this._width = mapLines[0].length;
+    this._height = mapLines.length;
+    console.log(mapLines, this._width, this._height);
+
+    this._tiles = map
+      .split('')
+      .filter((char) => char !== '\n')
+      .map((char, i) => new Tile(i % this._width, Math.floor(i / this._width), char === '.'));
   }
 
   get tiles() {
@@ -52,7 +61,7 @@ export class TileMap {
     return this._height;
   }
 
-  pointAt(x:number, y: number): Tile | undefined {
+  pointAt(x: number, y: number): Tile | undefined {
     if (this.containsXY(x, y)) {
       return this.tiles[y * this.width + x];
     }
@@ -61,10 +70,14 @@ export class TileMap {
 
   neighbours(tile: Tile): Tile[] {
     return [
-      this.pointAt(tile.x, tile.y - 1),
+      // this.pointAt(tile.x - 1, tile.y - 1),
       this.pointAt(tile.x - 1, tile.y),
-      this.pointAt(tile.x + 1, tile.y),
+      // this.pointAt(tile.x - 1, tile.y + 1),
+      this.pointAt(tile.x, tile.y - 1),
       this.pointAt(tile.x, tile.y + 1),
+      // this.pointAt(tile.x + 1, tile.y - 1),
+      this.pointAt(tile.x + 1, tile.y),
+      // this.pointAt(tile.x + 1, tile.y + 1),
     ].filter((n): n is Tile => Boolean(n));
   }
 
@@ -77,15 +90,14 @@ export class TileMap {
   }
 
   distanceBetween(tile1: Tile, tile2: Tile): number {
-    return Math.abs(tile1.x - tile2.x) + Math.abs(tile1.y - tile2.y);
+    return Math.hypot(tile2.x - tile1.x, tile2.y - tile1.y);
   }
 }
 
 export class AStarNode {
   private readonly _point: Tile;
   private readonly _parent: AStarNode | null;
-  private readonly moveCost: number;
-  private readonly heuristic: number;
+  private readonly _moveCost: number;
   private readonly _cost: number;
 
   constructor(point: Tile);
@@ -95,14 +107,13 @@ export class AStarNode {
     this._point = point;
 
     if (parent && heuristic != null) {
+      const stepCost = Math.abs(parent.point.x - point.x) + Math.abs(parent.point.y - point.y) > 1 ? 12 : 10;
       this._parent = parent;
-      this.moveCost = parent.moveCost + 1;
-      this.heuristic = heuristic;
-      this._cost = this.moveCost + this.heuristic;
+      this._moveCost = parent.moveCost + stepCost;
+      this._cost = this.moveCost + heuristic * 11;
     } else {
       this._parent = null;
-      this.moveCost = 0;
-      this.heuristic = 0;
+      this._moveCost = 0;
       this._cost = 0;
     }
   }
@@ -118,19 +129,23 @@ export class AStarNode {
   get parent() {
     return this._parent;
   }
+
+  get moveCost() {
+    return this._moveCost;
+  }
 }
 
 export enum AStarState {
-  'start',
-  'fail',
-  'success',
+  Start,
+  Fail,
+  Success,
 }
 
 export class AStar {
   private readonly start: AStarNode;
   private readonly end: AStarNode;
-  private readonly openList: Array<AStarNode>; // TODO: A heap / Fibonacci Min Heap ?
-  private closeList: Set<Tile>;
+  public readonly openList: Array<AStarNode>; // TODO: A heap / Fibonacci Min Heap ?
+  public closeList: Set<Tile>;
   private map: TileMap;
   public current: AStarNode | undefined;
   public state: AStarState;
@@ -139,7 +154,7 @@ export class AStar {
     this.map = map;
     this.start = new AStarNode(startPoint);
     this.end = new AStarNode(endPoint);
-    this.state = AStarState.start;
+    this.state = AStarState.Start;
 
     this.openList = [this.start];
     this.closeList = new Set();
@@ -157,22 +172,22 @@ export class AStar {
    */
   private preStart() {
     if (!this.start.point.walkable) {
-      this.state = AStarState.fail;
+      this.state = AStarState.Fail;
       return this.state;
     }
 
     if (!this.end.point.walkable) {
-      this.state = AStarState.fail;
+      this.state = AStarState.Fail;
       return this.state;
     }
 
     if (this.start.point === this.end.point) {
-      this.state = AStarState.fail;
+      this.state = AStarState.Fail;
       return this.state;
     }
 
     if (!this.map.contains(this.end.point)) {
-      this.state = AStarState.fail;
+      this.state = AStarState.Fail;
       return this.state;
     }
 
@@ -183,28 +198,28 @@ export class AStar {
    * nextStep
    *
    * Execute next step of path finding
-   * Some initialization is done before start as a step in searching
    */
   public nextStep() {
     // If search is finished do nothing
-    if (this.state !== AStarState.start) {
+    if (this.state !== AStarState.Start) {
       return this.state;
     }
 
     // If nothing to check just finish
     // Path is out of reach
     if (this.openList.length <= 0) {
-      this.state = AStarState.fail;
+      this.state = AStarState.Fail;
       return this.state;
     }
 
     // Get most promising node - with the least cost associated with it
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.current = this.openList.sort((a, b) => a.cost - b.cost).shift()!;
 
     // If the current node points to the same point as end one, the search is over
     // Path is provided by traversing parent linked list
     if (this.current.point === this.end.point) {
-      this.state = AStarState.success;
+      this.state = AStarState.Success;
       return this.state;
     }
 
@@ -214,9 +229,7 @@ export class AStar {
     const neighbors = this.map.neighbours(this.current.point);
 
     // Loop through neighbouring point
-    for (let i = 0; i < neighbors.length; i++) {
-      const neighbor = neighbors[i];
-
+    for (const neighbor of neighbors) {
       // Skip points that are no accessible
       if (!neighbor.walkable) {
         continue;
@@ -240,7 +253,6 @@ export class AStar {
         // Meaning: Check if path to already found point is worse than the one that we are checking
         // Without this step the final path may be suboptimal
         if (nodeInOpenList.cost > node.cost) {
-
           // Replace existing node if is worse
           this.openList[nodeInOpenListIndex] = node;
         }
@@ -258,7 +270,7 @@ export class AStar {
   path(): Array<Tile> {
     const path: Array<Tile> = [];
 
-    if (this.state !== AStarState.success) {
+    if (this.state !== AStarState.Success) {
       return path;
     }
 

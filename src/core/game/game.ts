@@ -1,33 +1,35 @@
-import {AStar, Tile, TileMap} from '../../features/pathfind/astar/astar';
+import { AStar, AStarState, Tile, TileMap } from '../../features/pathfind/astar/astar';
 import { Keyboard } from '../keyboard';
 import { Loop } from '../loop';
 
 export class Game {
   private keyboard = new Keyboard();
   private loop = new Loop();
-  private map = new TileMap(50, 40);
+  private map = new TileMap();
   private startPoint: Tile;
   private endPoint: Tile;
   private pathfinder: AStar;
 
   constructor() {
-    this.startPoint = this.map.pointAt(0, 0)!;
-    this.endPoint = this.map.pointAt(42, 38)!;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.startPoint = this.map.pointAt(10, 10)!;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.endPoint = this.map.pointAt(40, 40)!;
     this.pathfinder = new AStar(this.map, this.startPoint, this.endPoint);
     const button = document.getElementById('nextTick') as HTMLButtonElement;
     const button2 = document.getElementById('toggleLoop') as HTMLButtonElement;
 
-    button.addEventListener('click',  () => {
-      this.step()
-    })
+    button.addEventListener('click', () => {
+      this.step();
+    });
 
     button2.addEventListener('click', () => {
-      if(this.loop.isRunning) {
+      if (this.loop.isRunning) {
         this.loop.stop();
       } else {
         this.loop.start();
       }
-    })
+    });
     this.render();
 
     this.loop.addAction(() => this.step());
@@ -47,10 +49,24 @@ export class Game {
       if (i % this.map.width === 0) {
         map += '\n';
       }
-      if (path.includes(tile)) {
-        map += 'o';
+
+      // map += ` : ${tile.x.toString().padStart(2, '0')},${tile.y.toString().padStart(2, '0')}`;
+      if (this.pathfinder.state === AStarState.Success) {
+        if (path.includes(tile)) {
+          map += 'o';
+        } else {
+          map += tile.walkable ? '.' : '#';
+        }
       } else {
-        map += tile.walkable ? '_' : '▓';
+        if (this.pathfinder.current?.point === tile) {
+          map += 'o';
+        } else if (this.pathfinder.openList.find((n) => n.point === tile)) {
+          map += 'o';
+        } else if (this.pathfinder.closeList.has(tile)) {
+          map += 'x';
+        } else {
+          map += tile.walkable ? '.' : '#';
+        }
       }
     });
 

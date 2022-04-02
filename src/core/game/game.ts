@@ -16,7 +16,7 @@ export class Game {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.startPoint = this.map.pointAt(10, 10)!;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.endPoint = this.map.pointAt(40, 40)!;
+    this.endPoint = this.map.pointAt(25, 25)!;
 
     this.pathfinder = new AStar(this.map, this.startPoint, this.endPoint);
     const button = document.getElementById('nextTick') as HTMLButtonElement;

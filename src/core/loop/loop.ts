@@ -1,5 +1,7 @@
+export type Action = () => void;
+
 export class Loop {
-  private actions: Array<(() => void) | null> = [];
+  private actions: Array<Action | null> = [];
   isRunning = false;
 
   constructor() {
@@ -30,7 +32,7 @@ export class Loop {
    * @param action - Action to be executed on every loop
    * @return index of the added action
    */
-  public addAction(action: () => void): number {
+  public addAction(action: Action): number {
     const length = this.actions.push(action);
     return length - 1;
   }

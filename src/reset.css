@@ -74,3 +74,22 @@ meter {
 :where([draggable="true"]) {
   -webkit-user-drag: element;
 }
+
+/* Specifics*/
+
+pre {
+  font-family: monospace;
+  white-space: pre;
+}
+
+.line {
+  display: flex;
+}
+
+.node {
+  font-size: 8px;
+  width: 8px;
+  height: 8px;
+  text-align: center;
+  line-height: 8px;
+}

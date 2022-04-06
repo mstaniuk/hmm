@@ -1,53 +1,48 @@
+import { Queue } from '../../structures/queue/Queue';
+
+export type Keys = 'up' | 'down' | 'left' | 'right';
+
 export class Keyboard {
-  isUp = false;
-  isDown = false;
-  isLeft = false;
-  isRight = false;
+  private queue: Queue<Keys>;
 
   constructor() {
+    this.queue = new Queue();
     this.setupListeners();
   }
 
+  private static keyboardKeyToKey(key: string): Keys | void {
+    if (key === 'ArrowUp' || key === 'w') {
+      return 'up';
+    }
+
+    if (key === 'ArrowDown' || key === 's') {
+      return 'down';
+    }
+
+    if (key === 'ArrowLeft' || key === 'a') {
+      return 'left';
+    }
+
+    if (key === 'ArrowRight' || key === 'd') {
+      return 'right';
+    }
+  }
+
+  get current() {
+    return this.queue.peek();
+  }
+
   private setupListeners() {
-    // TODO: Make is less verbose
     document.addEventListener('keydown', (event) => {
-      switch (event.key) {
-        case 'ArrowUp':
-        case 'w':
-          this.isUp = true;
-          break;
-        case 'ArrowDown':
-        case 's':
-          this.isDown = true;
-          break;
-        case 'ArrowLeft':
-        case 'a':
-          this.isLeft = true;
-          break;
-        case 'ArrowRight':
-        case 'd':
-          this.isRight = true;
-          break;
+      const key = Keyboard.keyboardKeyToKey(event.key);
+      if (key) {
+        this.queue.push(key);
       }
     });
     document.addEventListener('keyup', (event) => {
-      switch (event.key) {
-        case 'ArrowUp':
-        case 'w':
-          this.isUp = false;
-          break;
-        case 'ArrowDown':
-        case 's':
-          this.isDown = false;
-          break;
-        case 'ArrowLeft':
-        case 'a':
-          this.isLeft = false;
-          break;
-        case 'ArrowRight':
-        case 'd':
-          this.isRight = false;
-          break;
+      const key = Keyboard.keyboardKeyToKey(event.key);
+      if (key) {
+        this.queue.remove(key);
       }
     });
   }

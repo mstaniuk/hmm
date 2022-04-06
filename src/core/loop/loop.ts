@@ -1,10 +1,13 @@
-export type Action = () => void;
+export type Action = (dt: number) => void;
 
 export class Loop {
   private actions: Array<Action | null> = [];
+  private lastTimestamp: DOMHighResTimeStamp;
+
   isRunning = false;
 
   constructor() {
+    this.lastTimestamp = performance.now();
     this.nextTick();
   }
 
@@ -12,16 +15,19 @@ export class Loop {
     if (!this.isRunning) {
       return;
     }
-    requestAnimationFrame(() => {
-      this.onLoop();
+    requestAnimationFrame((timestamp) => {
+      const dt = timestamp - this.lastTimestamp;
+      this.lastTimestamp = timestamp;
+
+      this.onLoop(dt);
       this.nextTick();
     });
   }
 
-  private onLoop() {
+  private onLoop(dt: number) {
     for (const action of this.actions) {
       if (action) {
-        action();
+        action(dt);
       }
     }
   }

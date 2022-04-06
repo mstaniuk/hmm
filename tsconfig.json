@@ -1,6 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
+    "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
     "target": "esnext",
     "useDefineForClassFields": true,
@@ -17,7 +18,7 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "incremental": true,
-    "types": ["vitest/globals"],
+    "types": ["vitest/globals"]
   },
   "include": ["."]
 }

@@ -1,5 +1,6 @@
 import { Tile } from '../../../core/tile/tile';
 import { TileMap } from '../../../core/tilemap/tilemap';
+import { Heap } from '../../../structures/heap/heap';
 
 import { AStarNode } from './astarnode';
 
@@ -12,7 +13,7 @@ export enum AStarState {
 export class AStar {
   private readonly start: AStarNode;
   private readonly end: AStarNode;
-  public readonly openList: Array<AStarNode>; // TODO: A heap / Fibonacci Min Heap ?
+  public readonly openList: Heap<AStarNode>; // TODO: A heap / Fibonacci Min Heap ?
   public closeList: Set<Tile>;
   private map: TileMap;
   public current: AStarNode | undefined;
@@ -24,10 +25,15 @@ export class AStar {
     this.end = new AStarNode(endPoint);
     this.state = AStarState.Start;
 
-    this.openList = [this.start];
+    this.openList = new Heap(AStar.compareNodes);
+    this.openList.push(this.start);
     this.closeList = new Set();
 
     this.preStart();
+  }
+
+  static compareNodes(node1: AStarNode, node2: AStarNode): boolean {
+    return node1.cost < node2.cost;
   }
 
   /**
@@ -75,14 +81,15 @@ export class AStar {
 
     // If nothing to check just finish
     // Path is out of reach
-    if (this.openList.length <= 0) {
+    if (this.openList.isEmpty) {
       this.state = AStarState.Fail;
       return this.state;
     }
 
     // Get most promising node - with the least cost associated with it
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.current = this.openList.sort((a, b) => a.cost - b.cost).shift()!;
+    this.current = this.openList.first!;
+    this.openList.shift();
 
     // If the current node points to the same point as end one, the search is over
     // Path is provided by traversing parent linked list
@@ -115,14 +122,15 @@ export class AStar {
       // Check if current node is in the queue to be evaluated
       const nodeInOpenListIndex = this.openList.findIndex((n) => n.point === node.point);
 
-      if (nodeInOpenListIndex > -1) {
-        const nodeInOpenList = this.openList[nodeInOpenListIndex];
+      if (nodeInOpenListIndex != null) {
+        const nodeInOpenList = this.openList.array[nodeInOpenListIndex];
+
         // Check if node queued for evaluation had worse (bigger) cost associated with it
         // Meaning: Check if path to already found point is worse than the one that we are checking
         // Without this step the final path may be suboptimal
         if (nodeInOpenList.cost > node.cost) {
           // Replace existing node if is worse
-          this.openList[nodeInOpenListIndex] = node;
+          this.openList.replace(nodeInOpenListIndex, node);
         }
 
         continue;

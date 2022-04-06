@@ -39,7 +39,7 @@ export class HtmlRenderer {
       } else {
         if (this.game.pathfinder.current?.point === tile) {
           node.innerHTML = 'o';
-        } else if (this.game.pathfinder.openList.find((n) => n.point === tile)) {
+        } else if (this.game.pathfinder.openList.array.find((n) => n.point === tile)) {
           node.innerHTML = 'o';
         } else if (this.game.pathfinder.closeList.has(tile)) {
           node.innerHTML = 'x';
